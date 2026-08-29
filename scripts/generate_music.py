@@ -17,7 +17,7 @@ import requests
 
 HF_TOKEN = os.environ["HF_TOKEN"]
 MODEL_ID = "facebook/musicgen-small"  # non-commercial license — see note above
-API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+API_URL = f"https://router.huggingface.co/hf-inference/models/{MODEL_ID}"
 
 # TODO: rotate/randomize this prompt so tracks vary day to day
 PROMPT = "lofi chill beat, warm piano, soft drums, relaxing background music"
