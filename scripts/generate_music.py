@@ -47,6 +47,10 @@ def main():
             time.sleep(wait)
             continue
 
+        if resp.status_code != 200:
+            print(f"Response status: {resp.status_code}")
+            print(f"Response body: {resp.text}")
+
         resp.raise_for_status()
 
     raise RuntimeError("Music generation failed after retries — see logs above.")
