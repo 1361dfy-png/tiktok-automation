@@ -1,4 +1,3 @@
-
 name: Generate and Post TikTok Video
 
 on:
@@ -50,9 +49,15 @@ jobs:
       - name: Combine loop + music into final video
         run: python scripts/combine.py
 
-      - name: Upload to TikTok
+      - name: Refresh TikTok token
         env:
-          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python scripts/refresh_tiktok_token.py
+
+      - name: Upload to TikTok
         run: python scripts/upload_tiktok.py
 
       - name: Upload artifact for debugging
