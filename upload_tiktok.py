@@ -1,17 +1,25 @@
 """
-Uploads output/final.mp4 to TikTok using the Content Posting API (direct post).
+Uploads output/final.mp4 to TikTok as a DRAFT using the Content Posting API's
+"upload to inbox" flow — this is the flow that matches the video.upload
+scope (the scope actually available in Sandbox without a separate TikTok
+audit). The video lands in the TikTok app's inbox/drafts on the target
+account; a human still has to open the TikTok app and tap "Post" to
+publish it.
+
+If you later apply for and get approved for the video.publish scope
+(Direct Post), swap INIT_URL below for the direct-post endpoint and add
+back the "post_info" block with privacy_level, captions, etc. — see
+https://developers.tiktok.com/doc/content-posting-api-reference-direct-post
 
 BEFORE THIS WORKS YOU NEED:
 1. A TikTok developer app with the "Content Posting API" product added,
-   approved for the scopes you need (video.publish).
-2. A user access token with that scope, refreshed as needed, stored as the
-   TIKTOK_ACCESS_TOKEN secret in your repo.
+   with the video.upload scope enabled.
+2. A user access token with that scope, stored as the TIKTOK_ACCESS_TOKEN
+   secret in your repo (see get_tiktok_token.py for how to obtain one).
 
-TikTok's API fields and endpoints do change over time — before relying on
-this in production, cross-check the request body (especially the exact key
-used to flag AI-generated content for TikTok's disclosure requirement)
-against the current docs at:
-https://developers.tiktok.com/doc/content-posting-api-reference-direct-post
+TikTok's API fields and endpoints do change over time — cross-check
+against the current docs before relying on this:
+https://developers.tiktok.com/doc/content-posting-api-reference-upload-video
 """
 
 import os
@@ -21,11 +29,9 @@ import requests
 ACCESS_TOKEN = os.environ["TIKTOK_ACCESS_TOKEN"]
 VIDEO_PATH = "output/final.mp4"
 
-INIT_URL = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+# "Upload to inbox" (draft) endpoints — different from the Direct Post ones.
+INIT_URL = "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/"
 STATUS_URL = "https://open.tiktokapis.com/v2/post/publish/status/fetch/"
-
-# TODO: rotate/randomize per post
-CAPTION = "Auto-generated ambient loop 🎧 #ambient #lofi"
 
 
 def init_upload(video_size: int) -> dict:
@@ -34,16 +40,6 @@ def init_upload(video_size: int) -> dict:
         "Content-Type": "application/json; charset=UTF-8",
     }
     body = {
-        "post_info": {
-            "title": CAPTION,
-            "privacy_level": "SELF_ONLY",  # switch to PUBLIC_TO_EVERYONE once you've tested end to end
-            "disable_duet": False,
-            "disable_comment": False,
-            "disable_stitch": False,
-            # NOTE: verify the current field name TikTok expects for AI-generated
-            # content disclosure — this is required by their platform policy.
-            "is_aigc": True,
-        },
         "source_info": {
             "source": "FILE_UPLOAD",
             "video_size": video_size,
@@ -94,7 +90,8 @@ def main():
     upload_video(upload_url, video_size)
     final_status = poll_status(publish_id)
 
-    print(f"Done. publish_id={publish_id} final_status={final_status}")
+    print(f"Done. Video sent to TikTok inbox as a draft. publish_id={publish_id} final_status={final_status}")
+    print("Open the TikTok app on the target account to review and tap Post.")
 
 
 if __name__ == "__main__":
