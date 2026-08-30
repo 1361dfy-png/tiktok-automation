@@ -1,50 +1,55 @@
+# -*- coding: utf-8 -*-
 """
-Picks a random interesting fact and saves it as plain text, to be drawn
-onto the background image by draw_text.py.
+Picks a random, longer Persian fact and splits it into a few slides
+(chunks) that will be shown one after another over the course of the
+video — this keeps viewers watching to the end instead of reading
+everything in the first two seconds.
 
-Kept as a static curated list (no external API call) for reliability —
-this is one less thing that can break or change out from under the
-pipeline. Add your own facts freely; keep them short (under ~140 chars)
-so they fit comfortably on a vertical video without shrinking too much.
+Static curated list (no external API call) for reliability.
 """
 
 import os
+import json
 import random
+import textwrap
 
 FACTS = [
-    "Honey never spoils — archaeologists have found 3,000-year-old honey in Egyptian tombs that's still edible.",
-    "Octopuses have three hearts, and two of them stop beating when they swim.",
-    "A day on Venus is longer than its year — it rotates slower than it orbits the Sun.",
-    "Bananas are berries, but strawberries aren't.",
-    "The Eiffel Tower grows about 6 inches taller in summer due to heat expansion.",
-    "Sharks existed before trees — they're older than the first trees by about 50 million years.",
-    "Wombat poop is cube-shaped, which keeps it from rolling away and marks their territory.",
-    "There are more possible chess games than atoms in the observable universe.",
-    "Sea otters hold hands while sleeping so they don't drift apart.",
-    "The shortest war in history lasted about 38 minutes, between Britain and Zanzibar in 1896.",
-    "A single cloud can weigh more than a million pounds.",
-    "Octopuses can taste with their arms — every sucker has chemoreceptors.",
-    "The inventor of the Pringles can is buried in one.",
-    "Some turtles can breathe through their butts.",
-    "Hot water can freeze faster than cold water under certain conditions — it's called the Mpemba effect.",
-    "The human brain uses about 20% of the body's total energy despite being only 2% of its weight.",
-    "Butterflies taste with their feet.",
-    "A group of flamingos is called a 'flamboyance'.",
-    "The Great Wall of China is not visible from space with the naked eye — that's a myth.",
-    "Cows have best friends and get stressed when separated from them.",
+    "عسل هرگز فاسد نمی‌شود. باستان‌شناسان در مقبره‌های مصر باستان عسلی سه‌هزار ساله پیدا کرده‌اند که هنوز قابل خوردن بود، چون ترکیب طبیعی آن اجازه‌ی رشد باکتری را نمی‌دهد.",
+    "اختاپوس سه قلب دارد. دو تا از این قلب‌ها فقط خون را به آبشش‌ها می‌رسانند و وقتی اختاپوس شنا می‌کند، از تپش می‌ایستند، به همین دلیل اختاپوس‌ها ترجیح می‌دهند بیشتر وقتشان را با خزیدن بگذرانند تا شنا کردن.",
+    "یک روز در سیاره‌ی زهره از یک سال آن طولانی‌تر است. زهره آنقدر آهسته دور خودش می‌چرخد که چرخش کامل آن حدود دویست و چهل و سه روز زمینی طول می‌کشد، در حالی که یک دور کامل به دور خورشید فقط دویست و بیست و پنج روز طول می‌کشد.",
+    "کوسه‌ها قبل از درخت‌ها روی زمین ظاهر شدند. فسیل‌های کوسه به حدود چهارصد میلیون سال پیش برمی‌گردد، در حالی که قدیمی‌ترین درخت‌های شناخته‌شده حدود سیصد و پنجاه میلیون سال قدمت دارند.",
+    "سمور دریایی هنگام خواب دست‌های یکدیگر را می‌گیرد تا در آب از هم دور نشوند. این رفتار بین مادر و بچه‌ها هم دیده می‌شود تا در طول شب گروه از هم پراکنده نشود.",
+    "برج ایفل در تابستان حدود پانزده سانتی‌متر بلندتر می‌شود. فلز آهنی که بدنه‌ی برج را ساخته در گرما منبسط می‌شود و همین باعث افزایش موقت ارتفاع آن می‌شود.",
+    "مغز انسان حدود بیست درصد از کل انرژی بدن را مصرف می‌کند، در حالی که تنها حدود دو درصد از وزن بدن را تشکیل می‌دهد. به همین دلیل فکر کردن زیاد واقعاً می‌تواند خسته‌کننده باشد.",
+    "پروانه‌ها با پاهایشان مزه را تشخیص می‌دهند. گیرنده‌های شیمیایی روی پاهای آن‌ها به آن‌ها کمک می‌کند بفهمند آیا برگی که روی آن نشسته‌اند برای تخم‌گذاری مناسب است یا نه.",
 ]
 
-OUTPUT_PATH = "output/fact.txt"
+NUM_SLIDES = 4
+OUTPUT_PATH = "output/slides.json"
+
+
+def split_into_slides(text: str, num_slides: int) -> list:
+    target_len = max(len(text) // num_slides, 1)
+    chunks = textwrap.wrap(text, width=target_len, break_long_words=False)
+
+    # textwrap can produce more/fewer chunks than requested; merge extras
+    # into the last slide so we end up with exactly num_slides pieces.
+    while len(chunks) > num_slides:
+        chunks[-2] = chunks[-2] + " " + chunks[-1]
+        chunks.pop()
+
+    return chunks
 
 
 def main():
     os.makedirs("output", exist_ok=True)
     fact = random.choice(FACTS)
+    slides = split_into_slides(fact, NUM_SLIDES)
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        f.write(fact)
+        json.dump(slides, f, ensure_ascii=False)
 
-    print(f"Selected fact: {fact}")
+    print(f"Selected fact ({len(slides)} slides): {fact}")
 
 
 if __name__ == "__main__":
