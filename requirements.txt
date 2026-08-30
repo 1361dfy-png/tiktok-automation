@@ -2,3 +2,8 @@ requests>=2.31.0
 huggingface_hub>=0.24.0
 Pillow>=10.0.0
 PyNaCl>=1.5.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+transformers>=4.40.0
+scipy>=1.11.0
+accelerate>=0.30.0
