@@ -16,21 +16,31 @@ Open) and adjust the pipeline call accordingly.
 """
 
 import os
+import random
 import numpy as np
 import scipy.io.wavfile
 from transformers import pipeline
 
 MODEL_ID = "facebook/musicgen-small"  # non-commercial license — see note above
 
-# TODO: rotate/randomize this prompt so tracks vary day to day
-PROMPT = "lofi chill beat, warm piano, soft drums, relaxing background music"
+# Rotate through a few styles so consecutive videos don't sound identical.
+# TODO: add more of your own to taste.
+PROMPTS = [
+    "lofi chill beat, warm piano, soft drums, relaxing background music",
+    "ambient pad textures, slow evolving synths, dreamy and calm",
+    "acoustic guitar fingerpicking, gentle and warm, cozy atmosphere",
+    "soft rain sounds blended with mellow piano, peaceful and introspective",
+    "warm analog synth pads, slow tempo, nostalgic and soothing",
+]
+PROMPT = random.choice(PROMPTS)
 
 OUTPUT_PATH = "output/music.wav"
 
 # Roughly controls output length. MusicGen generates at ~50 tokens/second
-# of audio, so ~500 tokens ≈ 10 seconds. Keep this modest — CPU generation
-# time scales with it, and combine.py loops whatever we produce anyway.
-MAX_NEW_TOKENS = 512
+# of audio, so ~4500 tokens ≈ 90 seconds. We generate one full-length track
+# instead of looping a short clip, so this needs to cover the whole video.
+# CPU generation time scales with this — expect several minutes per run.
+MAX_NEW_TOKENS = 4500
 
 
 def main():
@@ -41,7 +51,7 @@ def main():
 
     audio = np.asarray(result["audio"]).squeeze()
     scipy.io.wavfile.write(OUTPUT_PATH, rate=result["sampling_rate"], data=audio)
-    print(f"Saved music to {OUTPUT_PATH}")
+    print(f"Saved music to {OUTPUT_PATH} (prompt: {PROMPT})")
 
 
 if __name__ == "__main__":
