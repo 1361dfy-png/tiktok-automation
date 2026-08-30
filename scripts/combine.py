@@ -1,13 +1,15 @@
 """
-Loops output/loop.mp4 (the zooming image) indefinitely and lays the FULL,
-un-looped output/music.wav track on top, cutting the video to match the
-music's natural length (generate_music.py now produces a full ~90s track,
-so there's no audio loop seam to worry about).
-
-A short fade-in/fade-out is still applied to the music for a clean start
-and ending.
+Builds the final video:
+  - output/loop.mp4 (the zooming background) is looped to cover the full
+    music length.
+  - output/music.wav plays once, in full, with a short fade in/out.
+  - Each output/slide_N.png (rendered by draw_text.py) is overlaid on top
+    for its own equal time slice, so the TEXT STAYS FIXED on screen while
+    only the background moves underneath it — the slide images themselves
+    contain no motion.
 """
 
+import glob
 import subprocess
 
 LOOP_PATH = "output/loop.mp4"
@@ -40,25 +42,55 @@ def add_fade_in_out():
     subprocess.run(cmd, check=True)
 
 
+def build_overlay_filter(num_slides: int, slice_seconds: float) -> str:
+    """
+    Chains one overlay per slide onto the background, each gated to its own
+    time window with enable='between(t,start,end)'. Slide inputs are indices
+    2..num_slides+1 (0 = looped background video, 1 = music).
+    """
+    filters = []
+    current_label = "0:v"
+
+    for i in range(num_slides):
+        input_index = i + 2
+        start = i * slice_seconds
+        end = (i + 1) * slice_seconds
+        out_label = f"v{i}"
+        filters.append(
+            f"[{current_label}][{input_index}:v]overlay=enable='between(t,{start},{end})'[{out_label}]"
+        )
+        current_label = out_label
+
+    return ";".join(filters), current_label
+
+
 def main():
     add_fade_in_out()
+    total_seconds = get_duration(SMOOTHED_MUSIC_PATH)
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-stream_loop", "-1",
-        "-i", LOOP_PATH,
-        "-i", SMOOTHED_MUSIC_PATH,
-        "-map", "0:v",
+    slide_paths = sorted(glob.glob("output/slide_*.png"))
+    num_slides = len(slide_paths)
+    slice_seconds = total_seconds / num_slides
+
+    filter_complex, final_video_label = build_overlay_filter(num_slides, slice_seconds)
+
+    cmd = ["ffmpeg", "-y", "-stream_loop", "-1", "-i", LOOP_PATH, "-i", SMOOTHED_MUSIC_PATH]
+    for slide_path in slide_paths:
+        cmd += ["-loop", "1", "-i", slide_path]
+
+    cmd += [
+        "-filter_complex", filter_complex,
+        "-map", f"[{final_video_label}]",
         "-map", "1:a",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac",
-        "-shortest",   # cut the (infinitely looped) video to the music's length
+        "-t", str(total_seconds),
         FINAL_PATH,
     ]
 
     subprocess.run(cmd, check=True)
-    print(f"Saved final video to {FINAL_PATH}")
+    print(f"Saved final video to {FINAL_PATH} ({total_seconds:.0f}s, {num_slides} slides)")
 
 
 if __name__ == "__main__":
