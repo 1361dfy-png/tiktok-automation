@@ -6,7 +6,7 @@ that makes the whole pipeline runnable on GitHub's free (GPU-less) runners.
 
 import subprocess
 
-IMAGE_PATH = "output/image.png"
+IMAGE_PATH = "output/image_with_text.png"
 LOOP_PATH = "output/loop.mp4"
 
 FPS = 25
