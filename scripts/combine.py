@@ -9,7 +9,7 @@ why we don't just rely on "-shortest" against the raw music length.
 import subprocess
 
 LOOP_PATH = "output/loop.mp4"
-MUSIC_PATH = "output/music.mp3"
+MUSIC_PATH = "output/music.wav"
 FINAL_PATH = "output/final.mp4"
 
 TARGET_SECONDS = 65  # comfortably over TikTok's 60s mark; adjust as you like
