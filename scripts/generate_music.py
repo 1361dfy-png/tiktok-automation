@@ -16,6 +16,7 @@ Open) and adjust the pipeline call accordingly.
 """
 
 import os
+import numpy as np
 import scipy.io.wavfile
 from transformers import pipeline
 
@@ -38,7 +39,8 @@ def main():
     synthesiser = pipeline("text-to-audio", model=MODEL_ID, device="cpu")
     result = synthesiser(PROMPT, forward_params={"max_new_tokens": MAX_NEW_TOKENS, "do_sample": True})
 
-    scipy.io.wavfile.write(OUTPUT_PATH, rate=result["sampling_rate"], data=result["audio"][0])
+    audio = np.asarray(result["audio"]).squeeze()
+    scipy.io.wavfile.write(OUTPUT_PATH, rate=result["sampling_rate"], data=audio)
     print(f"Saved music to {OUTPUT_PATH}")
 
 
