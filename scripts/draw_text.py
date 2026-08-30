@@ -18,16 +18,15 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 from PIL import Image, ImageDraw, ImageFont
 
+import glob
+
 SLIDES_PATH = "output/slides.json"
 CANVAS_SIZE = (1080, 1920)  # must match the video resolution used in make_loop.py
 
-# fonts-farsiweb package provides these — first one found wins.
-FONT_CANDIDATES = [
-    "/usr/share/fonts/truetype/farsiweb/Roya.ttf",
-    "/usr/share/fonts/truetype/farsiweb/Nazli.ttf",
-    "/usr/share/fonts/truetype/farsiweb/Elham.ttf",
-    "/usr/share/fonts/truetype/farsiweb/Homa.ttf",
-]
+# fonts-farsiweb provides Titr, Nazli, Nazli-Bold, and Homa — but exact
+# filenames have varied across package versions, so glob the directory
+# instead of hardcoding names.
+FONT_DIR = "/usr/share/fonts/truetype/farsiweb"
 FONT_SIZE = 62
 LINE_SPACING = 18
 PANEL_PADDING = 60
@@ -37,12 +36,12 @@ WRAP_CHARS = 20  # rough characters per line before wrapping within a slide
 
 
 def find_font() -> str:
-    for path in FONT_CANDIDATES:
-        if os.path.exists(path):
-            return path
+    matches = sorted(glob.glob(f"{FONT_DIR}/*.ttf")) + sorted(glob.glob(f"{FONT_DIR}/*.TTF"))
+    if matches:
+        return matches[0]
     raise FileNotFoundError(
-        "No Persian-capable font found. Install the 'fonts-farsiweb' apt "
-        "package in the workflow before running this script."
+        f"No .ttf files found in {FONT_DIR}. Install the 'fonts-farsiweb' "
+        "apt package in the workflow before running this script."
     )
 
 
